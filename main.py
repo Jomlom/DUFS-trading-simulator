@@ -7,6 +7,7 @@ import importlib.util
 import pandas as pd
 import matplotlib.pyplot as plt
 import copy
+import seaborn as sn
 
 from datamodel import Portfolio, State
 from dataimport import read_file, extract_orders, extract_bot_orders
@@ -201,6 +202,22 @@ def main(round_data_path: str, trading_algo: str) -> None:
     print("\n=== Final Portfolio State ===")
     print(f"PnL: {portfolio.pnl:.2f}")
 
+    # # HEATMAP OF PRODUCT CORRELATIONS
+    # try:
+    #     if hasattr(algo, "mid_history"):
+    #         mid_df = pd.DataFrame(algo.mid_history)
+    #
+    #         corr = mid_df.corr()
+    #
+    #         plt.figure(figsize=(8,6), dpi=150)
+    #         sn.heatmap(corr, annot=True, cmap="coolwarm")
+    #         plt.title("Product Mid-Price Correlation Heatmap")
+    #         plt.show()
+    #     else:
+    #         print("No mid-price history recorded in algo")
+    # except Exception as e:
+    #     print("Heatmap generation failed:", e)
+
     analytics_df = prepare_analytics_data(quantity_data, products, market_data)
     positions_df = pd.DataFrame(index=quantity_data.index)
     for product in products:
@@ -219,7 +236,7 @@ if __name__ == "__main__":
         help="Main data file path",
     )
     parser.add_argument(
-        "--algo", default="algorithm_1.py", help="Trading alngorithm path"
+        "--algo", default="algorithm_2.py", help="Trading alngorithm path"
     )
     args = parser.parse_args()
 
