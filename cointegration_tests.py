@@ -41,7 +41,7 @@ def df_vwap_apply(df):
     return df
 
 Hatfield_df = df_vwap_apply(Hatfield_df)
-Catle_df = df_vwap_apply(Castle_df)
+Castle_df = df_vwap_apply(Castle_df)
 Chads_df = df_vwap_apply(Chads_df)
 Johns_df = df_vwap_apply(Johns_df)
 Collingwood_df = df_vwap_apply(Collingwood_df)
@@ -77,7 +77,7 @@ def Cointegration_Test(df1, df2, plot = True, re = False):
     dftest = adfuller(errors, maxlag = 1)
     dfoutput = pd.Series(dftest[0:4], index = ["Test Statistic", "p-value", "#Lags Used", "Number of Observations Used"])
     critical_values = pd.Series(dftest[4].values(), index = dftest[4].keys())
-    print(f"Dikey Fuller Result:\n{dfoutput} \n\n Dikey Fuller Critical Values:\n{critical_values}")
+    print(f"Dickey Fuller Result:\n{dfoutput} \n\n Dickey Fuller Critical Values:\n{critical_values}")
 
 
     #Plot OLS Test
@@ -91,6 +91,7 @@ def Cointegration_Test(df1, df2, plot = True, re = False):
 
     if re == True:
         return errors
+    return None
 
 
 def Z_test(errors):
