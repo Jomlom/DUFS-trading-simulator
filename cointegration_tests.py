@@ -41,7 +41,7 @@ def df_vwap_apply(df):
     return df
 
 Hatfield_df = df_vwap_apply(Hatfield_df)
-Catle_df = df_vwap_apply(Castle_df)
+Castle_df = df_vwap_apply(Castle_df)
 Chads_df = df_vwap_apply(Chads_df)
 Johns_df = df_vwap_apply(Johns_df)
 Collingwood_df = df_vwap_apply(Collingwood_df)
@@ -114,6 +114,13 @@ def has_nan_vwap(df):
 #    print("VWAP column is clean - no NaN values")
 
 
-
-
-Z_test(Cointegration_Test(Castle_df, Hatfield_df, re=True, plot = False))
+for (df1,df2) in [(Hatfield_df, Castle_df), (Hatfield_df, Chads_df), (Hatfield_df, Johns_df),
+                   (Hatfield_df, Collingwood_df), (Hatfield_df, Cuths_df),
+                     (Castle_df, Chads_df), (Castle_df, Johns_df),
+                        (Castle_df, Collingwood_df), (Castle_df, Cuths_df),
+                            (Chads_df, Johns_df), (Chads_df, Collingwood_df), (Chads_df, Cuths_df),
+                                (Johns_df, Collingwood_df), (Johns_df, Cuths_df),
+                                    (Collingwood_df, Cuths_df)]:
+        print(f"Testing Cointegration between {df1['product'].iloc[0]} and {df2['product'].iloc[0]}")
+        Cointegration_Test(df1, df2, plot = True)
+        
