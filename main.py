@@ -13,6 +13,7 @@ from datamodel import Portfolio, State
 from dataimport import read_file, extract_orders, extract_bot_orders
 from ordermatching import match_order
 from analytics_vis import Visualiser
+from bots_functions import clean_resting_orders, add_bot_orders
 
 # Set up logging
 logging.basicConfig(
@@ -52,27 +53,6 @@ def initialise_portfolio(products: List[str]) -> Portfolio:
     return portfolio
 
 
-def add_bot_orders(orderbook: Dict[str, Dict], bot_orders: Dict[str, Dict]) -> None:
-    """
-    Add bot orders to the existing orderbook.
-
-    :param orderbook: Current orderbook
-    :param bot_orders: Bot orders in the same format as the orderbook
-    """
-    for product, sides in bot_orders.items():
-        for side, pricepoints in sides.items():
-            if product not in orderbook:
-                orderbook[product] = {"BUY": {}, "SELL": {}}
-            if side not in orderbook[product]:
-                orderbook[product][side] = {}
-
-            for price, quantity in pricepoints.items():
-                if price in orderbook[product][side]:
-                    orderbook[product][side][price] += quantity
-                else:
-                    orderbook[product][side][price] = quantity
-
-
 def process_tick(state: State, bot_orders: Dict[str, Dict], algo, portfolio) -> None:
     # Get orders from the trader
 
@@ -87,11 +67,23 @@ def process_tick(state: State, bot_orders: Dict[str, Dict], algo, portfolio) -> 
     algo_orders = algo.run(publicstate)
 
     # Process algo orders
+    algo_resting_orders = {
+        product: {"BUY": {}, "SELL": {}} for product in state.products
+    }
+
     if algo_orders:
-        # Add bot orders to the orderbook
-        add_bot_orders(state.orderbook, bot_orders)
-        for order in algo_orders:
-            match_order(order, state.orderbook, portfolio, state.pos_limit)
+        algo_resting_orders = match_order(
+            algo_orders, state.orderbook, portfolio, state.pos_limit
+        )
+
+    # Add bot orders to the orderbook
+    add_bot_orders(
+        bot_orders,
+        state.orderbook,
+        algo_resting_orders,
+        portfolio,
+        state.pos_limit,
+    )
 
     portfolio.pnl = portfolio.cash
     for product in state.products:
