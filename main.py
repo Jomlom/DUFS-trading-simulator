@@ -21,7 +21,7 @@ logging.basicConfig(
 
 # Constants
 POSITION_LIMIT = 40
-MAX_TICKS = 1000
+MAX_TICKS = 1500
 
 
 def import_trader(file_path: str) -> type:
@@ -211,5 +211,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args.round, args.algo)
+
 
 
