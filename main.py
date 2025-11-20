@@ -21,7 +21,7 @@ logging.basicConfig(
 
 # Constants
 POSITION_LIMIT = 40
-MAX_TICKS = 1000
+MAX_TICKS = 1500
 
 
 def import_trader(file_path: str) -> type:
@@ -168,16 +168,16 @@ def main(round_data_path: str, trading_algo: str) -> None:
             product: extract_bot_orders(bot_df, tick, product) for product in products
         }
         state = State(orderbook, portfolio.quantity, products, pos_limit)
-        try:
-            process_tick(state, bot_orders, algo, portfolio)
-            metrics["tick"].append(tick)
-            metrics["PnL"].append(portfolio.pnl)
-            metrics["Cash"].append(portfolio.cash)
-            for product in products:
-                metrics[f"{product}_quantity"].append(portfolio.quantity[product])
+        # try:
+        process_tick(state, bot_orders, algo, portfolio)
+        metrics["tick"].append(tick)
+        metrics["PnL"].append(portfolio.pnl)
+        metrics["Cash"].append(portfolio.cash)
+        for product in products:
+            metrics[f"{product}_quantity"].append(portfolio.quantity[product])
 
-        except:
-            break
+        # except:
+        #     break
 
     end = datetime.now()
     quantity_data = pd.DataFrame(metrics).set_index("tick")
@@ -211,4 +211,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args.round, args.algo)
+
+
 
