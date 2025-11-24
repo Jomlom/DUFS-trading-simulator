@@ -223,7 +223,7 @@ if __name__ == "__main__":
         help="Main data file path",
     )
     parser.add_argument(
-        "--algo", default="algorithm_Heesuhhhhh.py", help="Trading alngorithm path"
+        "--algo", default="algorithm_4.py", help="Trading alngorithm path"
     )
     args = parser.parse_args()
 
