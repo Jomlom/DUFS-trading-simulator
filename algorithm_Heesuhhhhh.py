@@ -4,7 +4,7 @@ from collections import deque
 
 class Trader:
     def __init__(self):
-        self.MAX_POS = 160
+        self.MAX_POS = 40
         self.VOL_WINDOW = 30
         self.mid_buf = deque(maxlen=self.VOL_WINDOW)
         self.last_mid = None

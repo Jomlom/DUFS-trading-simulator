@@ -148,7 +148,7 @@ def has_nan_vwap(df):
 #else:
 #    print("VWAP column is clean - no NaN values")
 
-
+'''
 for (df1,df2) in [(bond1_df, bond2_df), (bond1_df, bond3_df), (bond1_df, bond4_df),
                    (bond1_df, ETF1_df), (bond1_df, ETF2_df), (bond1_df, synthETF1_df), 
                    (bond1_df, synthETF2_df), (bond2_df, bond3_df), (bond2_df, bond4_df),
@@ -158,4 +158,7 @@ for (df1,df2) in [(bond1_df, bond2_df), (bond1_df, bond3_df), (bond1_df, bond4_d
                                     (ETF1_df, ETF2_df), (ETF1_df, synthETF1_df), (ETF1_df, synthETF2_df), (ETF2_df, synthETF1_df), (ETF2_df, synthETF2_df), (synthETF1_df, synthETF2_df)]:
         print(f"Testing Cointegration between {df1['product'].iloc[0]} and {df2['product'].iloc[0]}")
         Cointegration_Test(df1, df2, plot = True)
-        
+'''
+
+Cointegration_Test(ETF1_df, synthETF1_df, plot=True)
+Cointegration_Test(ETF2_df, synthETF2_df, plot=True)
