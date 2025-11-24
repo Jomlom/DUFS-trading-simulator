@@ -10,6 +10,7 @@ class Trader:
         self.last_mid = None
 
     def run(self, state):
+
         p = "ETF1"
         if p not in state.orderbook: return []
         L = Listing(state.orderbook[p], p)
@@ -61,5 +62,7 @@ class Trader:
                 if ask_qty > 0:
                     orders.append(Order(product, our_ask, -base_qty))
 
+        product2 = "bond2"
+        orders.append(Order(product2, list(Listing(state.orderbook[product], product2).sell_orders.keys())[0], 40))
 
         return orders
