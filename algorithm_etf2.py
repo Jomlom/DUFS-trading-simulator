@@ -1,6 +1,6 @@
 from datamodel import *
 import numpy as np
-#made 2k...
+#made 2k
 class Trader:
     def __init__(self):
         self.W = 60

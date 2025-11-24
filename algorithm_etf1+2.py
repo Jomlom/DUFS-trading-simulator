@@ -1,6 +1,6 @@
 from datamodel import *
 import numpy as np
-#made 10k!
+#made 10k
 class Trader:
     def __init__(self):
         # ETF1 params
