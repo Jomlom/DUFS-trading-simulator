@@ -7,7 +7,7 @@ class Trader:
     POSITION_LIMIT = 40
     WINDOW = 50
     ENTRY_STD_MULTIPLIER = 1.5
-    MAX_UNITS_PER_TICK = 4
+    MAX_UNITS_PER_TICK = 3
     COOLDOWN_TICKS = 3
 
     PAIRS = [
