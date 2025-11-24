@@ -11,102 +11,55 @@ class Trader:
 
     def run(self, state):
         p = "ETF1"
-        if p not in state.orderbook:
-            return []
-
+        if p not in state.orderbook: return []
         L = Listing(state.orderbook[p], p)
-        bid = list(L.buy_orders.keys())[0]
-        ask = list(L.sell_orders.keys())[0]
-        bq = L.buy_orders[bid]
-        aq = L.sell_orders[ask]
-        spread = ask - bid
-        if spread <= 0:
-            return []
+        bid, ask = list(L.buy_orders.keys())[0], list(L.sell_orders.keys())[0]
+        bq, aq = L.buy_orders[bid], L.sell_orders[ask]
+        if ask - bid <= 0: return []
 
         pos = state.positions.get(p, 0)
-
-        # --------------------------
-        # VOL & MID
-        # --------------------------
-        mid = 0.5 * (bid + ask)
+        mid = 0.5*(bid+ask)
         self.mid_buf.append(mid)
-
-        if len(self.mid_buf) >= 5:
-            vol = np.std(np.diff(self.mid_buf)) + 1e-6
-        else:
-            vol = 1.0
-
-        # --------------------------
-        # MOMENTUM SIGNAL
-        # --------------------------
-        momentum = 0
-        if self.last_mid is not None:
-            diff = mid - self.last_mid
-            if diff > 0.5: momentum = 1
-            elif diff < -0.5: momentum = -1
+        vol = np.std(np.diff(self.mid_buf))+1e-6 if len(self.mid_buf)>=5 else 1.0
+        diff = mid - self.last_mid if self.last_mid is not None else 0
+        momentum = 1 if diff>0.5 else -1 if diff<-0.5 else 0
         self.last_mid = mid
 
-        # --------------------------
-        # ORDERBOOK IMBALANCE
-        # --------------------------
-        imb = (bq - aq) / max(1, bq + aq)
-        tilt = int(imb * 2)
+        imb = (bq-aq)/max(1,bq+aq)
+        tilt = int(imb*2)
+        boost = max(1,int(0.65*(ask-bid)+12*vol))
+        lean = int(0.025*pos)
 
-        # --------------------------
-        # BOOST
-        # --------------------------
-        boost = max(1, int(0.65 * spread + 12 * vol))
+        our_bid = min(bid+boost-lean+tilt, ask-1)
+        our_ask = max(ask-boost-lean+tilt, bid+1)
 
-        # --------------------------
-        # INVENTORY LEAN
-        # --------------------------
-        lean = int(0.025 * pos)
-
-        # --------------------------
-        # QUOTES
-        # --------------------------
-        our_bid = bid + boost - lean + tilt
-        our_ask = ask - boost - lean + tilt
-
-        if our_bid >= ask:
-            our_bid = ask - 1
-        if our_ask <= bid:
-            our_ask = bid + 1
-
-        # --------------------------
-        # SIZE MODEL (buffed)
-        # --------------------------
-        base = 30 + int(9 * spread) + int(90 * vol)
-        imb_add = int(abs(imb) * 110)
-        inv_pen = int(abs(pos) * 0.55)
-
-        size = max(10, base + imb_add - inv_pen)
-
-        buy_cap = max(0, self.MAX_POS - pos)
-        sell_cap = max(0, self.MAX_POS + pos)
-
-        buy_size = min(size, buy_cap)
-        sell_size = min(size, sell_cap)
-
+        base = 30+int(9*(ask-bid))+int(90*vol)
+        size = max(10, base + int(abs(imb)*110) - int(abs(pos)*0.55))
+        buy_cap, sell_cap = max(0,self.MAX_POS-pos), max(0,self.MAX_POS+pos)
+        buy_size, sell_size = min(size,buy_cap), min(size,sell_cap)
         orders = []
 
-        # --------------------------
-        # NEW: AGGRESSIVE SNAP MODE
-        # --------------------------
-        if abs(imb) > 0.6 and momentum == 1 and buy_cap > 0:
-            orders.append(Order(p, ask, buy_cap))     # take to max long
-            return orders
+        if abs(imb)>0.6:
+            if momentum==1 and buy_cap>0: return [Order(p, ask, buy_cap)]
+            if momentum==-1 and sell_cap>0: return [Order(p, bid, -sell_cap)]
+        if buy_size>0 and bq>0: orders.append(Order(p, our_bid, buy_size))
+        if sell_size>0 and aq>0: orders.append(Order(p, our_ask, -sell_size))
 
-        if abs(imb) > 0.6 and momentum == -1 and sell_cap > 0:
-            orders.append(Order(p, bid, -sell_cap))   # take to max short
-            return orders
+        product = "bond4"
+        listings = Listing(state.orderbook[product], product)
+        if listings.buy_orders and listings.sell_orders:
+            highest_bid, lowest_ask = list(listings.buy_orders.keys())[0], list(listings.sell_orders.keys())[0]
+            bid_qty, ask_qty = listings.buy_orders[highest_bid], listings.sell_orders[lowest_ask]
+            spread = lowest_ask - highest_bid
+            if not spread < 2:
+                base_qty, boost = (2, 1) if spread <= 3 else (3, 2) if spread <= 5 else (5, 3)
+                our_bid = min(highest_bid + boost, lowest_ask - 1)
+                our_ask = max(lowest_ask - boost, highest_bid + 1)
 
-        # --------------------------
-        # NORMAL MAKER MODE
-        # --------------------------
-        if buy_size > 0 and bq > 0:
-            orders.append(Order(p, our_bid, buy_size))
-        if sell_size > 0 and aq > 0:
-            orders.append(Order(p, our_ask, -sell_size))
+                if bid_qty > 0:
+                    orders.append(Order(product, our_bid, base_qty))
+                if ask_qty > 0:
+                    orders.append(Order(product, our_ask, -base_qty))
+
 
         return orders
