@@ -9,23 +9,28 @@ import statsmodels.api as sm
 import statsmodels.tsa.stattools as ts
 from statsmodels.tsa.stattools import adfuller 
 
+# ETF1 = bond1 + bond2 + bond3
+# ETF2 = 0.5(bond1 + bond2 + bond4)
 
 # Resolve CSV path relative to this script (robust) and print diagnostics
 BASE = Path(__file__).resolve().parent
-csv_path = BASE / "Round Data" / "Round_1" / "Round_1.csv"
+csv_path = BASE / "Round Data" / "Round_2" / "Round_2.csv"
 
 stock_names, time, df = read_file(str(csv_path))
 
-Hatfield_df = df[df["product"] == "HATFIELD_STOCKS"].copy()
-Castle_df = df[df["product"] == "CASTLE_STOCKS"].copy()
-Chads_df = df[df["product"] == "CHADS_STOCKS"].copy()
-Johns_df = df[df["product"] == "JOHNS_STOCKS"].copy()
-Collingwood_df = df[df["product"] == "COLLINGWOOD_STOCKS"].copy()
-Cuths_df = df[df["product"] == "CUTHS_STOCKS"].copy()
+bond1_df = df[df["product"] == "bond1"].copy()
+bond2_df = df[df["product"] == "bond2"].copy()
+bond3_df = df[df["product"] == "bond3"].copy()
+bond4_df = df[df["product"] == "bond4"].copy()
+ETF1_df = df[df["product"] == "ETF1"].copy()
+ETF2_df = df[df["product"] == "ETF2"].copy()
 
 # Calculate volume weighted average price using all 3 bid/ask levels
 def calculate_vwap(bids, asks, bid_vols, ask_vols):
     total_volume = sum(bid_vols) + sum(ask_vols)
+    if total_volume == 0:
+         return None
+    
     total_value = (sum(b * v for b, v in zip(bids, bid_vols)) + 
                    sum(a * v for a, v in zip(asks, ask_vols)))
     return total_value / total_volume
@@ -40,12 +45,36 @@ def df_vwap_apply(df):
     
     return df
 
-Hatfield_df = df_vwap_apply(Hatfield_df)
-Castle_df = df_vwap_apply(Castle_df)
-Chads_df = df_vwap_apply(Chads_df)
-Johns_df = df_vwap_apply(Johns_df)
-Collingwood_df = df_vwap_apply(Collingwood_df)
-Cuths_df = df_vwap_apply(Cuths_df)
+bond1_df = df_vwap_apply(bond1_df)
+bond2_df = df_vwap_apply(bond2_df)
+bond3_df = df_vwap_apply(bond3_df)
+bond4_df = df_vwap_apply(bond4_df)
+ETF1_df = df_vwap_apply(ETF1_df)
+ETF2_df = df_vwap_apply(ETF2_df)
+
+# --- synthETF1 = bond1 + bond2 + bond3 (by VWAP) ---
+synthETF1_df = (
+    bond1_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b1'})
+    .merge(bond2_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b2'}), on='timestamp', how='inner')
+    .merge(bond3_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b3'}), on='timestamp', how='inner')
+)
+
+synthETF1_df['vwap'] = synthETF1_df['b1'] + synthETF1_df['b2'] + synthETF1_df['b3']
+synthETF1_df['product'] = 'synthETF1'
+synthETF1_df = synthETF1_df[['timestamp', 'vwap', 'product']]
+
+# --- synthETF2 = 0.5 * (bond1 + bond2 + bond4) ---
+synthETF2_df = (
+    bond1_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b1'})
+    .merge(bond2_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b2'}), on='timestamp', how='inner')
+    .merge(bond4_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b3'}), on='timestamp', how='inner')
+)
+
+synthETF2_df['vwap'] = 0.5 * (synthETF2_df['b1'] + synthETF2_df['b2'] + synthETF2_df['b3'])
+synthETF2_df['product'] = 'synthETF2'
+synthETF2_df = synthETF2_df[['timestamp', 'vwap', 'product']]
+
+
 
 def Cointegration_Test(df1, df2, plot = True, re = False):
     '''
@@ -60,6 +89,11 @@ def Cointegration_Test(df1, df2, plot = True, re = False):
 
     # Then merge
     merged = pd.merge(df1_renamed, df2_renamed, on='timestamp', how='inner')
+    
+    merged = merged.replace([np.inf, -np.inf], np.nan)
+    merged = merged.dropna(subset=["vwap1", "vwap2"])
+    merged = merged[(merged["vwap1"]>0) & (merged['vwap2']>0)]
+
     Y = np.log(merged['vwap2'])
     X = np.log(merged['vwap1'])
     
@@ -114,14 +148,17 @@ def has_nan_vwap(df):
 #else:
 #    print("VWAP column is clean - no NaN values")
 
-
-for (df1,df2) in [(Hatfield_df, Castle_df), (Hatfield_df, Chads_df), (Hatfield_df, Johns_df),
-                   (Hatfield_df, Collingwood_df), (Hatfield_df, Cuths_df),
-                     (Castle_df, Chads_df), (Castle_df, Johns_df),
-                        (Castle_df, Collingwood_df), (Castle_df, Cuths_df),
-                            (Chads_df, Johns_df), (Chads_df, Collingwood_df), (Chads_df, Cuths_df),
-                                (Johns_df, Collingwood_df), (Johns_df, Cuths_df),
-                                    (Collingwood_df, Cuths_df)]:
+'''
+for (df1,df2) in [(bond1_df, bond2_df), (bond1_df, bond3_df), (bond1_df, bond4_df),
+                   (bond1_df, ETF1_df), (bond1_df, ETF2_df), (bond1_df, synthETF1_df), 
+                   (bond1_df, synthETF2_df), (bond2_df, bond3_df), (bond2_df, bond4_df),
+                        (bond2_df, ETF1_df), (bond2_df, ETF2_df), (bond2_df, synthETF1_df), (bond2_df, synthETF2_df),
+                            (bond3_df, bond4_df), (bond3_df, ETF1_df), (bond3_df, ETF2_df), (bond3_df, synthETF1_df), (bond3_df, synthETF2_df),
+                                (bond4_df, ETF1_df), (bond4_df, ETF2_df), (bond4_df, synthETF1_df), (bond4_df, synthETF2_df),
+                                    (ETF1_df, ETF2_df), (ETF1_df, synthETF1_df), (ETF1_df, synthETF2_df), (ETF2_df, synthETF1_df), (ETF2_df, synthETF2_df), (synthETF1_df, synthETF2_df)]:
         print(f"Testing Cointegration between {df1['product'].iloc[0]} and {df2['product'].iloc[0]}")
         Cointegration_Test(df1, df2, plot = True)
-        
+'''
+
+Cointegration_Test(ETF1_df, synthETF1_df, plot=True)
+Cointegration_Test(ETF2_df, synthETF2_df, plot=True)
