@@ -11,8 +11,10 @@ class Trader:
     COOLDOWN_TICKS = 3
 
     PAIRS = [
-        ("ETF1", "bond2"),
+        ("ETF1", "bond2")
     ]
+
+    JUMPY_PRODUCTS = ["bond4"]
 
     def __init__(self):
         self.highest_bids = {}
@@ -85,6 +87,30 @@ class Trader:
                     self.positions[prodA] = posA + units
                     self.positions[prodB] = posB - units
                     self.last_trade_tick[(prodA, prodB)] = self.current_tick
+
+        for product in self.JUMPY_PRODUCTS:
+            if product not in state.orderbook:
+                continue
+
+            listings = Listing(state.orderbook[product], product)
+            if not listings.buy_orders or not listings.sell_orders:
+                continue
+
+            highest_bid, lowest_ask = list(listings.buy_orders.keys())[0], list(listings.sell_orders.keys())[0]
+            bid_qty, ask_qty = listings.buy_orders[highest_bid], listings.sell_orders[lowest_ask]
+            spread = lowest_ask - highest_bid
+            if spread < 2:
+                continue
+
+            # determine base quantity and boost based on spread
+            base_qty, boost = (2, 1) if spread <= 3 else (3, 2) if spread <= 5 else (5, 3)
+            our_bid = min(highest_bid + boost, lowest_ask - 1)
+            our_ask = max(lowest_ask - boost, highest_bid + 1)
+
+            if bid_qty > 0:
+                orders.append(Order(product, our_bid, base_qty))
+            if ask_qty > 0:
+                orders.append(Order(product, our_ask, -base_qty))
 
         return orders
 
