@@ -21,8 +21,8 @@ logging.basicConfig(
 )
 
 # Constants
-POSITION_LIMIT = 40
-MAX_TICKS = 1500
+POSITION_LIMIT = 50
+MAX_TICKS = 1000
 
 
 def import_trader(file_path: str) -> type:
@@ -219,11 +219,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the trading simulation.")
     parser.add_argument(
         "--round",
-        default="Round Data/Round_2/Round_2.csv",
+        default="Round Data/Round_3/Round_3.csv",
         help="Main data file path",
     )
     parser.add_argument(
-        "--algo", default="algorithm_Heesuhhhhh.py", help="Trading alngorithm path"
+        "--algo", default="algorithm_4.py", help="Trading alngorithm path"
     )
     args = parser.parse_args()
 

@@ -1,6 +1,7 @@
 from datamodel import Order
 import numpy as np
 
+
 PAIR_PARAMS = {
     ("HATFIELD_STOCKS", "COLLINGWOOD_STOCKS"): (-0.104, 1.012),
     ("HATFIELD_STOCKS", "CASTLE_STOCKS"):      (4.491, 0.180),
