@@ -3,6 +3,7 @@ from datamodel import *
 class Trader:
     def run(self, state):
         orders = []
+
         for product in state.products:
             listings = Listing(state.orderbook[product], product)
             highest_bid, lowest_ask = list(listings.buy_orders.keys())[0], list(listings.sell_orders.keys())[0]
