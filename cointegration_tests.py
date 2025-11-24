@@ -52,6 +52,30 @@ bond4_df = df_vwap_apply(bond4_df)
 ETF1_df = df_vwap_apply(ETF1_df)
 ETF2_df = df_vwap_apply(ETF2_df)
 
+# --- synthETF1 = bond1 + bond2 + bond3 (by VWAP) ---
+synthETF1_df = (
+    bond1_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b1'})
+    .merge(bond2_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b2'}), on='timestamp', how='inner')
+    .merge(bond3_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b3'}), on='timestamp', how='inner')
+)
+
+synthETF1_df['vwap'] = synthETF1_df['b1'] + synthETF1_df['b2'] + synthETF1_df['b3']
+synthETF1_df['product'] = 'synthETF1'
+synthETF1_df = synthETF1_df[['timestamp', 'vwap', 'product']]
+
+# --- synthETF2 = 0.5 * (bond1 + bond2 + bond4) ---
+synthETF2_df = (
+    bond1_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b1'})
+    .merge(bond2_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b2'}), on='timestamp', how='inner')
+    .merge(bond4_df[['timestamp', 'vwap']].rename(columns={'vwap': 'b3'}), on='timestamp', how='inner')
+)
+
+synthETF2_df['vwap'] = 0.5 * (synthETF2_df['b1'] + synthETF2_df['b2'] + synthETF2_df['b3'])
+synthETF2_df['product'] = 'synthETF2'
+synthETF2_df = synthETF2_df[['timestamp', 'vwap', 'product']]
+
+
+
 def Cointegration_Test(df1, df2, plot = True, re = False):
     '''
     Plot = True self explanatory
@@ -126,12 +150,12 @@ def has_nan_vwap(df):
 
 
 for (df1,df2) in [(bond1_df, bond2_df), (bond1_df, bond3_df), (bond1_df, bond4_df),
-                   (bond1_df, ETF1_df), (bond1_df, ETF2_df),
-                     (bond2_df, bond3_df), (bond2_df, bond4_df),
-                        (bond2_df, ETF1_df), (bond2_df, ETF2_df),
-                            (bond3_df, bond4_df), (bond3_df, ETF1_df), (bond3_df, ETF2_df),
-                                (bond4_df, ETF1_df), (bond4_df, ETF2_df),
-                                    (ETF1_df, ETF2_df)]:
+                   (bond1_df, ETF1_df), (bond1_df, ETF2_df), (bond1_df, synthETF1_df), 
+                   (bond1_df, synthETF2_df), (bond2_df, bond3_df), (bond2_df, bond4_df),
+                        (bond2_df, ETF1_df), (bond2_df, ETF2_df), (bond2_df, synthETF1_df), (bond2_df, synthETF2_df),
+                            (bond3_df, bond4_df), (bond3_df, ETF1_df), (bond3_df, ETF2_df), (bond3_df, synthETF1_df), (bond3_df, synthETF2_df),
+                                (bond4_df, ETF1_df), (bond4_df, ETF2_df), (bond4_df, synthETF1_df), (bond4_df, synthETF2_df),
+                                    (ETF1_df, ETF2_df), (ETF1_df, synthETF1_df), (ETF1_df, synthETF2_df), (ETF2_df, synthETF1_df), (ETF2_df, synthETF2_df), (synthETF1_df, synthETF2_df)]:
         print(f"Testing Cointegration between {df1['product'].iloc[0]} and {df2['product'].iloc[0]}")
         Cointegration_Test(df1, df2, plot = True)
         

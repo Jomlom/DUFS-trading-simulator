@@ -11,7 +11,7 @@ class Trader:
     COOLDOWN_TICKS = 3
 
     PAIRS = [
-        ("ETF1", "bond2")
+        ("ETF1", "bond2"),
     ]
 
     JUMPY_PRODUCTS = ["bond4"]
