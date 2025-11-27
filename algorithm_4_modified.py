@@ -18,13 +18,14 @@ This algorithms strategy (option-backed mean reversion):
 
 #optimised parameters:
 '''
-entry_z: 1.5
-exit_z: 0.45
-window: 150
-max_units_per_tick: 12
+entry_z: 0.9
+exit_z: 0.25
+window: 100
+max_units_per_tick: 17
 cooldown: 4
 '''
-#PnL 171691.00, Max drawdown 41088
+
+#PnL 122879, max drawdown 27238.50
 
 class Trader:
     
@@ -34,10 +35,10 @@ class Trader:
     def __init__(
         self,
         position_limit: int = 50,
-        window: int = 150,
-        entry_z: float = 1.5,
-        exit_z: float = 0.45,
-        max_units_per_tick: int = 12,
+        window: int = 100,
+        entry_z: float = 0.9,
+        exit_z: float = 0.25,
+        max_units_per_tick: int = 17,
         cooldown: int = 4,
         strike: float = 10000,
     ):
@@ -91,14 +92,18 @@ class Trader:
                 continue
 
             # track underlying mid prices for z-score
-            self.spread_hist[u].append(mid_u)
+
+            #changed this part of Jonty's code to 
+            #make the algo trade underlying 
+            spread = mid_u - fair_value
+            self.spread_hist[u].append(spread)
+
             hist = np.array(list(self.spread_hist[u]))
             if len(hist) < int(self.window/3):
                 continue
 
-            diffs = hist - fair_value
-            mu, sigma = diffs.mean(), diffs.std() + 1e-8
-            z = (mid_u - fair_value - mu) / sigma
+            mu, sigma = hist.mean(), hist.std() + 1e-8
+            z = (spread - mu) / sigma
 
             if self.tick - self.last_trade[u] < self.cooldown:
                 continue
@@ -144,3 +149,6 @@ class Trader:
         if not bids or not asks:
             return None
         return (bids[-1] + asks[-1]) / 2
+
+
+
