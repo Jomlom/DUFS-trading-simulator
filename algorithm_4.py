@@ -16,18 +16,8 @@ This algorithms strategy (option-backed mean reversion):
     scale trades based on deviation size and gradually exit as it returns to normal
 '''
 
-#optimised parameters:
-'''
-entry_z: 1.5
-exit_z: 0.45
-window: 150
-max_units_per_tick: 12
-cooldown: 4
-'''
-#PnL 171691.00, Max drawdown 41088
-
 class Trader:
-    
+
     underlyings = ["Underlying"]
     options = {"Underlying": ("Call", "Put")}
 
@@ -37,11 +27,11 @@ class Trader:
         window: int = 150,
         entry_z: float = 1.5,
         exit_z: float = 0.45,
-        max_units_per_tick: int = 12,
+        max_units_per_tick: int = 10,
         cooldown: int = 4,
         strike: float = 10000,
     ):
-        
+
         self.position_limit = position_limit
         self.window = window
         self.entry_z = entry_z
@@ -107,7 +97,7 @@ class Trader:
 
             def qty_from_z(z_val):
                 # scale trade size based on signal strength
-                scaled = int((abs(z_val)/self.entry_z)**0.5 * self.max_units_per_tick)
+                scaled = int((abs(z_val)/self.entry_z)**2.1 * self.max_units_per_tick)
                 return min(scaled, self.position_limit)
 
             target_qty = 0

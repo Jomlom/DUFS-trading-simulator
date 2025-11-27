@@ -138,6 +138,7 @@ def prepare_analytics_data(
 
     return analytics_df
 
+'''
 def max_drawdown(equity_curve):
     peak = equity_curve[0]
     max_dd = 0.0
@@ -171,6 +172,7 @@ def run_backtest(round_data_path: str, trading_algo: str, trader_kwargs: dict) -
 
     max_dd = max_drawdown(equity_curve)
     return portfolio.pnl, max_dd
+'''
 
 def main(round_data_path: str, trading_algo: str) -> None:
     products, ticks, df = read_file(round_data_path)
@@ -258,7 +260,7 @@ if __name__ == "__main__":
         help="Main data file path",
     )
     parser.add_argument(
-        "--algo", default="algorithm_4_modified.py", help="Trading alngorithm path"
+        "--algo", default="algorithm_4.py", help="Trading alngorithm path"
     )
     args = parser.parse_args()
 
