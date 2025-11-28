@@ -23,7 +23,7 @@ logging.basicConfig(
 )
 
 # Constants
-POSITION_LIMIT = 50
+POSITION_LIMIT = 60
 MAX_TICKS = 1000
 
 
@@ -138,42 +138,6 @@ def prepare_analytics_data(
 
     return analytics_df
 
-'''
-def max_drawdown(equity_curve):
-    peak = equity_curve[0]
-    max_dd = 0.0
-    for x in equity_curve:
-        if x > peak:
-            peak = x
-        dd = peak - x
-        if dd > max_dd:
-            max_dd = dd
-    return max_dd
-
-def run_backtest(round_data_path: str, trading_algo: str, trader_kwargs: dict) -> float:
-    #run one backteest with given set of Trader parameters. Returns final PnL
-    products, ticks, df = read_file(round_data_path)
-    bot_df = pd.read_csv(round_data_path[:-4] + "_bots.csv")
-    portfolio = initialise_portfolio(products)
-    pos_limit = {product: POSITION_LIMIT for product in products}
-
-    Trader = import_trader(trading_algo)
-    algo = Trader(**trader_kwargs)
-    equity_curve = []
-
-    for tick in range(1, MAX_TICKS):
-        orderbook = {product: extract_orders(df, tick, product) for product in products}
-        bot_orders = {
-            product: extract_bot_orders(bot_df, tick, product) for product in products
-        }
-        state = State(orderbook, portfolio.quantity, products, pos_limit)
-        process_tick(state, bot_orders, algo, portfolio)
-        equity_curve.append(portfolio.pnl)
-
-    max_dd = max_drawdown(equity_curve)
-    return portfolio.pnl, max_dd
-'''
-
 def main(round_data_path: str, trading_algo: str) -> None:
     products, ticks, df = read_file(round_data_path)
     bot_df = pd.read_csv(round_data_path[:-4] + "_bots.csv")
@@ -226,22 +190,6 @@ def main(round_data_path: str, trading_algo: str) -> None:
     print("\n=== Final Portfolio State ===")
     print(f"PnL: {portfolio.pnl:.2f}")
 
-    # # HEATMAP OF PRODUCT CORRELATIONS
-    # try:
-    #     if hasattr(algo, "mid_history"):
-    #         mid_df = pd.DataFrame(algo.mid_history)
-    #
-    #         corr = mid_df.corr()
-    #
-    #         plt.figure(figsize=(8,6), dpi=150)
-    #         sn.heatmap(corr, annot=True, cmap="coolwarm")
-    #         plt.title("Product Mid-Price Correlation Heatmap")
-    #         plt.show()
-    #     else:
-    #         print("No mid-price history recorded in algo")
-    # except Exception as e:
-    #     print("Heatmap generation failed:", e)
-
     analytics_df = prepare_analytics_data(quantity_data, products, market_data)
     positions_df = pd.DataFrame(index=quantity_data.index)
     for product in products:
@@ -256,48 +204,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the trading simulation.")
     parser.add_argument(
         "--round",
-        default="Round Data/Round_3/Round_3.csv",
+        default="Round Data/Round_4/Round_4.csv",
         help="Main data file path",
     )
     parser.add_argument(
-        "--algo", default="algorithm_4.py", help="Trading alngorithm path"
+        "--algo", default="algorithm_1.py", help="Trading alngorithm path"
     )
     args = parser.parse_args()
 
-    #parameter optimisation code
-    '''
-    round_path = args.round
-    algo_path = args.algo
-
-    entry_z_values   = [1.4, 1.45, 1.5, 1.55, 1.6]
-    exit_z_values    = [0.45, 0.5, 0.55]
-    cooldown_values  = [2, 3, 4]
-    window_values    = [80, 100, 120, 150]
-    max_units_values = [6, 8, 10, 12, 14]
-
-
-    best_result = None #will store dict {"pnl": ..., "params": {...}}
-
-    for entry_z, exit_z, window, max_units, cooldown in product(entry_z_values, exit_z_values, window_values, max_units_values, cooldown_values):
-        params = {
-            "entry_z": entry_z,
-            "exit_z": exit_z,
-            "window": window,
-            "max_units_per_tick": max_units,
-            "cooldown": cooldown
-            #can add "strike": 10000, "position_limit: 50"
-        }
-
-        pnl, max_dd = run_backtest(round_path, algo_path, params)
-        print(f"Params {params}) -> PnL {pnl:.2f}, MaxDD {max_dd:.2f}")
-
-        if best_result is None or pnl > best_result["pnl"]:
-            best_result = {"pnl": pnl, "params": params}
-
-    print("\n=== BEST PARAMETER SET ===")
-    print(f"PnL: {best_result['pnl']:.2f}")
-    print(f"Params: {best_result['params']}")
-'''
     main(args.round, args.algo)
     
 
