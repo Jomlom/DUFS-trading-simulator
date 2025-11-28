@@ -15,13 +15,15 @@ from ordermatching import match_order
 from analytics_vis import Visualiser
 from bots_functions import clean_resting_orders, add_bot_orders
 
+from itertools import product
+
 # Set up logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 # Constants
-POSITION_LIMIT = 50
+POSITION_LIMIT = 60
 MAX_TICKS = 1000
 
 
@@ -136,7 +138,6 @@ def prepare_analytics_data(
 
     return analytics_df
 
-
 def main(round_data_path: str, trading_algo: str) -> None:
     products, ticks, df = read_file(round_data_path)
     bot_df = pd.read_csv(round_data_path[:-4] + "_bots.csv")
@@ -189,22 +190,6 @@ def main(round_data_path: str, trading_algo: str) -> None:
     print("\n=== Final Portfolio State ===")
     print(f"PnL: {portfolio.pnl:.2f}")
 
-    # # HEATMAP OF PRODUCT CORRELATIONS
-    # try:
-    #     if hasattr(algo, "mid_history"):
-    #         mid_df = pd.DataFrame(algo.mid_history)
-    #
-    #         corr = mid_df.corr()
-    #
-    #         plt.figure(figsize=(8,6), dpi=150)
-    #         sn.heatmap(corr, annot=True, cmap="coolwarm")
-    #         plt.title("Product Mid-Price Correlation Heatmap")
-    #         plt.show()
-    #     else:
-    #         print("No mid-price history recorded in algo")
-    # except Exception as e:
-    #     print("Heatmap generation failed:", e)
-
     analytics_df = prepare_analytics_data(quantity_data, products, market_data)
     positions_df = pd.DataFrame(index=quantity_data.index)
     for product in products:
@@ -219,16 +204,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the trading simulation.")
     parser.add_argument(
         "--round",
-        default="Round Data/Round_3/Round_3.csv",
+        default="Round Data/Round_4/Round_4.csv",
         help="Main data file path",
     )
     parser.add_argument(
-        "--algo", default="algorithm_4.py", help="Trading alngorithm path"
+        "--algo", default="algorithm_1.py", help="Trading alngorithm path"
     )
     args = parser.parse_args()
 
     main(args.round, args.algo)
-
+    
 
 
 
