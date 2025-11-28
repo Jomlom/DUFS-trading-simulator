@@ -18,7 +18,11 @@ Pairs mean reversion strategy:
 
 PAIRS = [
     ("CHADS_STOCKS", "JOHNS_STOCKS"),
-    ("HATFIELD_STOCKS", "COLLINGWOOD_STOCKS")
+    #("HATFIELD_STOCKS", "COLLINGWOOD_STOCKS")
+]
+
+HIGH_SPREAD_PRODUCTS = [
+    "CASTLE_STOCKS"
 ]
 
 class Trader:
@@ -26,13 +30,12 @@ class Trader:
     def __init__(
             self,
             position_limit: int = 60,
-            window: int = 100,
-            entry_z: float = 1.5,
-            exit_z: float = 0.1,
-            max_units_per_tick: int = 6,
-            cooldown: int = 8,
+            window: int = 70,
+            entry_z: float = 1.2,
+            exit_z: float = 0.2,
+            max_units_per_tick: int = 5,
+            cooldown: int = 1,
     ):
-
         self.position_limit = position_limit
         self.window = window
         self.entry_z = entry_z
@@ -93,7 +96,7 @@ class Trader:
             pos_B = self.positions[B]
 
             def qty_from_z(z_val):
-                scaled = min(int((abs(z_val) / self.entry_z) ** 2.1 * self.max_units_per_tick), self.position_limit)
+                scaled = min(int((abs(z_val) / self.entry_z) ** 1.5 * self.max_units_per_tick), self.position_limit)
                 return min(scaled, self.position_limit)
 
             target_qty_A = 0
@@ -127,6 +130,28 @@ class Trader:
                 orders.append(Order(B, price, target_qty_B))
                 self.positions[B] += target_qty_B
                 self.last_trade[B] = self.tick
+
+        for product in HIGH_SPREAD_PRODUCTS:
+            if product not in state.orderbook:
+                continue
+
+            listings = Listing(state.orderbook[product], product)
+            if not listings.buy_orders or not listings.sell_orders:
+                continue
+
+            highest_bid, lowest_ask = list(listings.buy_orders.keys())[0], list(listings.sell_orders.keys())[0]
+            bid_qty, ask_qty = listings.buy_orders[highest_bid], listings.sell_orders[lowest_ask]
+            spread = lowest_ask - highest_bid
+            if spread < 3:
+                continue
+
+            our_bid = min(highest_bid + 1, lowest_ask - 1)
+            our_ask = max(lowest_ask - 1, highest_bid + 1)
+
+            if bid_qty > 0:
+                orders.append(Order(product, our_bid, 60))
+            if ask_qty > 0:
+                orders.append(Order(product, our_ask, -60))
 
         return orders
 
